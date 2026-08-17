@@ -152,6 +152,55 @@ export function readMultilineInput(
   });
 }
 
+export function extractRetryDelay(errorMsg: string): number {
+  const match = errorMsg.match(/try again in ([0-9.]+)s/i);
+  if (match && match[1]) {
+    const seconds = parseFloat(match[1]);
+    return Math.ceil(seconds * 1000) + 500;
+  }
+  return 5000;
+}
+
+export function pruneMessagesWindow(
+  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+  maxTurns: number = 4
+): Array<{ role: "system" | "user" | "assistant"; content: string }> {
+  if (messages.length <= maxTurns + 1) return messages;
+  const systemMsg = messages[0];
+  const recent = messages.slice(-maxTurns);
+  return [systemMsg, ...recent];
+}
+
+export async function generateTextWithRetry(
+  params: Parameters<typeof generateText>[0],
+  maxRetries: number = 3
+): Promise<ReturnType<typeof generateText>> {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await generateText(params);
+    } catch (err: any) {
+      const errMsg = err?.message || String(err);
+      const isRateLimit =
+        err?.status === 429 ||
+        errMsg.toLowerCase().includes("rate limit") ||
+        errMsg.toLowerCase().includes("tpm");
+
+      if (isRateLimit && attempt < maxRetries) {
+        attempt++;
+        const delayMs = extractRetryDelay(errMsg);
+        const seconds = (delayMs / 1000).toFixed(1);
+        console.log(
+          `\n\x1b[33m⏳ Límite de tokens de Groq alcanzado. Esperando ${seconds}s para continuar automáticamente (intento ${attempt}/${maxRetries})...\x1b[0m`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 async function main() {
   if (!process.env.GROQ_API_KEY) {
     console.error("❌ GROQ_API_KEY no está configurada en .env.local");
@@ -166,7 +215,7 @@ async function main() {
   console.log("Escribe 'salir' o presiona Ctrl+C para terminar.");
   console.log("========================================================\n");
 
-  const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+  let messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
     { role: "system", content: instructions },
   ];
 
@@ -185,8 +234,9 @@ async function main() {
 
       const sanitizedInput = sanitizeTerminalTableInput(trimmed);
       messages.push({ role: "user", content: sanitizedInput });
+      messages = pruneMessagesWindow(messages, 4);
 
-      const result = await generateText({
+      const result = await generateTextWithRetry({
         model: groq(modelName),
         messages,
         tools,
@@ -195,6 +245,7 @@ async function main() {
 
       console.log(`\n\x1b[35m🤖 Nutriólogo SMAE:\x1b[0m\n${result.text}`);
       messages.push({ role: "assistant", content: result.text });
+      messages = pruneMessagesWindow(messages, 4);
     } catch (err: any) {
       if (err?.code === "ERR_USE_AFTER_CLOSE" || err?.message?.includes("closed")) {
         break;
