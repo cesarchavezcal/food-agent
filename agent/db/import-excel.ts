@@ -81,14 +81,25 @@ export function parseSmaeWorkbook(filePath: string): {
     const rows: unknown[][] = xlsxLib.utils.sheet_to_json(sheet, { header: 1 });
     if (rows.length < 3) continue;
 
-    // Find header row (usually row 1 containing "ALIMENTOS")
-    let headerRowIdx = 1;
-    for (let r = 0; r < Math.min(5, rows.length); r++) {
-      const rowStr = JSON.stringify(rows[r] || "");
-      if (rowStr.toLowerCase().includes("alimentos")) {
+    // Find true column header row (contains "peso neto" or "cantidad sugerida")
+    let headerRowIdx = -1;
+    for (let r = 0; r < Math.min(10, rows.length); r++) {
+      const row = rows[r];
+      if (
+        Array.isArray(row) &&
+        row.some(
+          (cell) =>
+            String(cell).toLowerCase().includes("peso neto") ||
+            String(cell).toLowerCase().includes("cantidad sugerida")
+        )
+      ) {
         headerRowIdx = r;
         break;
       }
+    }
+
+    if (headerRowIdx === -1) {
+      throw new Error(`[SMAE Parser] Unable to find valid column headers in sheet "${group.sheetName}"`);
     }
 
     const header = rows[headerRowIdx] as string[];
@@ -101,6 +112,10 @@ export function parseSmaeWorkbook(filePath: string): {
     const colFat = header.findIndex((h) => String(h).toLowerCase().includes("lípido") || String(h).toLowerCase().includes("lipido"));
     const colCho = header.findIndex((h) => String(h).toLowerCase().includes("hidrato") || String(h).toLowerCase().includes("carbono"));
 
+    if (colName === -1 || colNetGrams === -1) {
+      throw new Error(`[SMAE Parser] Required name and net weight columns missing in sheet "${group.sheetName}"`);
+    }
+
     for (let i = headerRowIdx + 1; i < rows.length; i++) {
       const row = rows[i] as (string | number | undefined)[];
       if (!row || !row[colName]) continue;
@@ -108,13 +123,13 @@ export function parseSmaeWorkbook(filePath: string): {
       const rawName = String(row[colName]).trim();
       if (!rawName || rawName.toLowerCase() === "alimentos") continue;
 
-      const netGrams = Number(row[colNetGrams]) || (Number(row[colQty]) > 0 ? Number(row[colQty]) : 100);
-      const qty = Number(row[colQty]) || 1;
-      const unit = String(row[colUnit] || "g").trim();
-      const kcal = Number(row[colKcal]) || group.kcal;
-      const protein = Number(row[colProt]) || group.proteinG;
-      const fat = Number(row[colFat]) || group.fatG;
-      const cho = Number(row[colCho]) || group.choG;
+      const netGrams = Number(row[colNetGrams]) > 0 ? Number(row[colNetGrams]) : (Number(row[colQty]) > 0 ? Number(row[colQty]) : 100);
+      const qty = Number(row[colQty]) > 0 ? Number(row[colQty]) : 1;
+      const unit = colUnit !== -1 && row[colUnit] ? String(row[colUnit]).trim() : "g";
+      const kcal = colKcal !== -1 && Number(row[colKcal]) >= 0 ? Number(row[colKcal]) : group.kcal;
+      const protein = colProt !== -1 && Number(row[colProt]) >= 0 ? Number(row[colProt]) : 0;
+      const fat = colFat !== -1 && Number(row[colFat]) >= 0 ? Number(row[colFat]) : 0;
+      const cho = colCho !== -1 && Number(row[colCho]) >= 0 ? Number(row[colCho]) : 0;
 
       // Scale per-portion values to per-100g
       const scaleTo100 = netGrams > 0 ? 100 / netGrams : 1;
@@ -164,7 +179,10 @@ export async function seedDatabase(excelPath = "data/smae.xlsx") {
     });
   }
 
-  // Batch insert foods in chunks of 500
+  // Clear previous excel reference records to refresh with updated schema data
+  await sql`DELETE FROM foods WHERE source = 'excel';`;
+
+  // Bulk insert foods in chunks of 500 (fast single-query batching)
   const CHUNK_SIZE = 500;
   for (let i = 0; i < parsedFoods.length; i += CHUNK_SIZE) {
     const chunk = parsedFoods.slice(i, i + CHUNK_SIZE);
