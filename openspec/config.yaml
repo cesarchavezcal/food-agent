@@ -2,30 +2,30 @@
 schema: 1
 
 project:
-  name: agent-boilerplate
-  repository: cesarchavezcal/agent-boilerplate
-  type: template-boilerplate
-  description: Lightweight, stack-agnostic GitHub repository template pre-configured for AI agent-driven software development.
+  name: food-agent
+  repository: cesarchavezcal/food-agent
+  type: agentic-web-application
+  description: Personal diet-tracking AI agent based on the Mexican SMAE with deterministic nutritional math on a $0 stack.
   stack:
-    language: polyglot / shell / markdown
-    frameworks: []
-    package_manager: null
-    build_tool: null
+    language: typescript
+    frameworks: ["eve", "ai-sdk", "drizzle", "nextjs"]
+    package_manager: npm
+    build_tool: next
 
 testing:
-  runner: null
-  framework: null
-  layers: []
-  coverage_tool: null
-  strict_tdd: false
-  reason_strict_tdd_disabled: "Base boilerplate template does not include a test runner. Enable strict_tdd: true when configuring a concrete project stack with Vitest, Jest, pytest, or Go test."
-  command: null
+  runner: vitest
+  framework: vitest
+  layers: ["unit", "integration"]
+  coverage_tool: v8
+  strict_tdd: true
+  reason_strict_tdd_disabled: null
+  command: "npx vitest run"
 
 quality:
   linter: gga
   linter_config: .gga
-  formatter: null
-  type_checker: null
+  formatter: prettier
+  type_checker: tsc
 
 conventions:
   git:
@@ -39,7 +39,7 @@ conventions:
     spec:
       command: "/to-spec"
     design:
-      command: "/information-architecture"
+      command: "/ia"
       secondary: "/ooux"
     tasks:
       command: "/to-tickets"
