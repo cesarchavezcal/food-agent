@@ -201,6 +201,46 @@ export async function generateTextWithRetry(
   }
 }
 
+export interface CliSpinner {
+  start: (text: string) => void;
+  update: (text: string) => void;
+  stop: () => void;
+}
+
+export function createCliSpinner(stream = process.stdout): CliSpinner {
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+  let frameIdx = 0;
+  let currentText = "";
+  let timer: NodeJS.Timeout | null = null;
+
+  const render = () => {
+    const frame = frames[frameIdx];
+    frameIdx = (frameIdx + 1) % frames.length;
+    stream.write(`\r\x1b[K\x1b[36m${frame}\x1b[0m ${currentText}`);
+  };
+
+  return {
+    start: (text: string) => {
+      currentText = text;
+      frameIdx = 0;
+      render();
+      if (timer) clearInterval(timer);
+      timer = setInterval(render, 80);
+    },
+    update: (text: string) => {
+      currentText = text;
+      render();
+    },
+    stop: () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      stream.write("\r\x1b[K");
+    },
+  };
+}
+
 async function main() {
   if (!process.env.GROQ_API_KEY) {
     console.error("❌ GROQ_API_KEY no está configurada en .env.local");
@@ -220,6 +260,7 @@ async function main() {
   ];
 
   const rl = readline.createInterface({ input, output });
+  const spinner = createCliSpinner();
 
   while (true) {
     try {
@@ -236,17 +277,25 @@ async function main() {
       messages.push({ role: "user", content: sanitizedInput });
       messages = pruneMessagesWindow(messages, 4);
 
-      const result = await generateTextWithRetry({
-        model: groq(modelName),
-        messages,
-        tools,
-        maxSteps: 5,
-      });
+      spinner.start("Pensando y analizando solicitud...");
+
+      let result;
+      try {
+        result = await generateTextWithRetry({
+          model: groq(modelName),
+          messages,
+          tools,
+          maxSteps: 5,
+        });
+      } finally {
+        spinner.stop();
+      }
 
       console.log(`\n\x1b[35m🤖 Nutriólogo SMAE:\x1b[0m\n${result.text}`);
       messages.push({ role: "assistant", content: result.text });
       messages = pruneMessagesWindow(messages, 4);
     } catch (err: any) {
+      spinner.stop();
       if (err?.code === "ERR_USE_AFTER_CLOSE" || err?.message?.includes("closed")) {
         break;
       }
