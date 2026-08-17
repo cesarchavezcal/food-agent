@@ -63,6 +63,7 @@ Cargo.lock
 *.out
 
 # IDE & Editor Caches (keep workspace rules tracked)
+.scratch/
 .gemini/
 .idea/
 *.swp

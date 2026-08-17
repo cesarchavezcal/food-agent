@@ -9,6 +9,7 @@ This file records durable learnings, architectural decision records (ADRs), user
 | Date | ADR Title | Decision & Rationale | Status |
 |---|---|---|---|
 | 2026-08-17 | [ADR-0001: SMAE Domain Model & $0 Stack](docs/adr/0001-smae-domain-model-and-stack.md) | Vercel Eve/AI SDK + Groq + Neon Postgres (`pg_trgm`) + Drizzle ORM on strict free-tier stack; deterministic TS tools for math; composite macro solver (15g CHO/7g Prot/5g Lip); per-meal tracking in strict grams. | Accepted |
+| 2026-08-17 | [ADR-0002: In-Memory Tool Caching](docs/adr/0002-in-memory-tool-caching.md) | In-memory LRU cache inside TypeScript tools for 0ms repeated food portion queries with automatic invalidation on new food creation. | Accepted |
 
 ---
 
