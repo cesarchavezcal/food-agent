@@ -67,10 +67,11 @@ export async function logFood(
 
   if (mockLogStore) {
     mockLogStore.push(logRecord);
-  }
-
-  if (db) {
-    await db.insert(dailyLogs).values(logRecord);
+  } else if (db) {
+    await db.insert(dailyLogs).values({
+      ...logRecord,
+      foodId: null, // User quick logs might not reference foreign key
+    });
   }
 
   return {
