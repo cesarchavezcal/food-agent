@@ -1,0 +1,33 @@
+{
+  "name": "food-agent",
+  "version": "0.1.0",
+  "description": "Personal diet-tracking AI agent based on Mexican SMAE with deterministic nutritional math",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx eve dev",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx agent/db/import-excel.ts",
+    "db:studio": "drizzle-kit studio",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/groq": "^1.1.8",
+    "@neondatabase/serverless": "^0.10.4",
+    "ai": "^4.1.25",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.38.4",
+    "xlsx": "^0.18.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@total-typescript/shoehorn": "^0.1.2",
+    "@types/node": "^22.13.4",
+    "drizzle-kit": "^0.30.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}
