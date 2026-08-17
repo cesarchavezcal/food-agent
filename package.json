@@ -8,8 +8,10 @@
     "dev": "npx eve dev",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:push": "drizzle-kit push",
+    "db:init": "tsx scripts/init-db.ts",
+    "db:push": "tsx scripts/init-db.ts && drizzle-kit push",
     "db:seed": "tsx agent/db/import-excel.ts",
+    "db:setup": "npm run db:init && npm run db:push && npm run db:seed",
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit"
   },

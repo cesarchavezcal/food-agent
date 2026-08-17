@@ -84,10 +84,7 @@ export async function logNutritionFacts(
 
   if (mockStore) {
     mockStore.push(cachedFood);
-  }
-
-  // Insert or update in database if available
-  if (db) {
+  } else if (db) {
     await db.insert(foods).values({
       id: foodId,
       name: foodName,

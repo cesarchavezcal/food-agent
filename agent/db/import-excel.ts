@@ -1,7 +1,7 @@
 import * as xlsx from "xlsx";
 import * as path from "path";
 import * as fs from "fs";
-import { db } from "./client.js";
+import { db, sql } from "./client.js";
 import { equivalentGroups, foods } from "./schema.js";
 
 export interface StandardGroupDefinition {
@@ -60,7 +60,8 @@ export function parseSmaeWorkbook(filePath: string): {
     throw new Error(`SMAE workbook file not found at: ${resolvedPath}`);
   }
 
-  const wb = xlsx.readFile(resolvedPath);
+  const xlsxLib = (xlsx as any).default || xlsx;
+  const wb = xlsxLib.readFile(resolvedPath);
   const parsedGroups = STANDARD_GROUPS.map((g) => ({
     id: g.id,
     name: g.name,
@@ -77,7 +78,7 @@ export function parseSmaeWorkbook(filePath: string): {
     const sheet = wb.Sheets[group.sheetName];
     if (!sheet) continue;
 
-    const rows: unknown[][] = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+    const rows: unknown[][] = xlsxLib.utils.sheet_to_json(sheet, { header: 1 });
     if (rows.length < 3) continue;
 
     // Find header row (usually row 1 containing "ALIMENTOS")
@@ -146,6 +147,13 @@ export async function seedDatabase(excelPath = "data/smae.xlsx") {
   if (!db) {
     console.log("No DATABASE_URL set; skipping DB write (dry-run mode).");
     return { groupsCount: groups.length, foodsCount: parsedFoods.length };
+  }
+
+  // Ensure pg_trgm extension exists
+  try {
+    await sql`CREATE EXTENSION IF NOT EXISTS pg_trgm;`;
+  } catch (e) {
+    // Ignore if already exists or permissions handled
   }
 
   // Insert groups idempotently
