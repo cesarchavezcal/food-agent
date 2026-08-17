@@ -120,6 +120,38 @@ export function sanitizeTerminalTableInput(input: string): string {
   return result.join("\n");
 }
 
+export function readMultilineInput(
+  rl: { on: (event: string, cb: (line: string) => void) => void; off?: (event: string, cb: (line: string) => void) => void; removeListener?: (event: string, cb: (line: string) => void) => void },
+  writePrompt?: (prompt: string) => void,
+  debounceMs: number = 80
+): Promise<string> {
+  return new Promise((resolve) => {
+    let buffer = "";
+    let timer: NodeJS.Timeout | null = null;
+
+    if (writePrompt) {
+      writePrompt("\n\x1b[32m🧑 Tú:\x1b[0m ");
+    }
+
+    const onLine = (line: string) => {
+      buffer = buffer ? `${buffer}\n${line}` : line;
+
+      if (timer) clearTimeout(timer);
+
+      timer = setTimeout(() => {
+        if (rl.off) {
+          rl.off("line", onLine);
+        } else if (rl.removeListener) {
+          rl.removeListener("line", onLine);
+        }
+        resolve(buffer.trim());
+      }, debounceMs);
+    };
+
+    rl.on("line", onLine);
+  });
+}
+
 async function main() {
   if (!process.env.GROQ_API_KEY) {
     console.error("❌ GROQ_API_KEY no está configurada en .env.local");
@@ -142,8 +174,8 @@ async function main() {
 
   while (true) {
     try {
-      const userInput = await rl.question("\n\x1b[32m🧑 Tú:\x1b[0m ");
-      const trimmed = userInput.trim();
+      const rawInput = await readMultilineInput(rl, (p) => output.write(p));
+      const trimmed = rawInput.trim();
 
       if (!trimmed) continue;
       if (trimmed.toLowerCase() === "salir" || trimmed.toLowerCase() === "exit") {
