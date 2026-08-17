@@ -1,144 +1,64 @@
-# Agent Boilerplate Template
+# Food Agent
 
-A lightweight, stack-agnostic GitHub Repository Template pre-configured for AI agent-driven software development across any AI environment (Google Antigravity, Cursor, Claude Code, Windsurf, Aider, GitHub Copilot).
+A personal diet-tracking AI agent based on the Mexican SMAE (*Sistema Mexicano de Alimentos Equivalentes*), designed for deterministic nutritional planning, composite equivalent calculations, and intake logging on a strictly $0 infrastructure stack.
 
 ---
 
 ## 🌟 Key Features
 
-- **Universal AI Agent Governance**: Standardized multi-agent configuration via [`AGENTS.md`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/AGENTS.md), [`.cursorrules`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/.cursorrules), and [`CLAUDE.md`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/CLAUDE.md). Any agent automatically detects uninitialized placeholders and offers onboarding.
-- **Unified SDD + 7-Step Pipeline**: Seamless bi-directional integration between official **Spec-Driven Development (SDD)** lifecycle commands (`/sdd-explore`, `/sdd-apply`, `/sdd-verify`) and specialized domain design skills (`/product-function`, `/ooux`, `/harness`).
-- **AI Pre-Commit Guardrails ([`.gga`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/.gga))**: Integrated Gentleman Guardian Angel evaluates staged git commits with Gemini / Antigravity (`agy`), enforcing clean architecture, strict typing, and test-first discipline before commits land.
-- **Dynamic Post-Brainstorming Stack Scaffolding**: Keep the template 100% stack-neutral. Tech stacks, test runners, and tooling are dynamically synthesized and provisioned after product discovery ($y = f(x)$).
-- **Comprehensive Skill Registry**: 41 pre-indexed, curated agent skills ([`.atl/skill-registry.md`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/.atl/skill-registry.md)) spanning product discovery, engineering TDD, and autonomous subagent swarms.
-- **Strict Git Lifecycle & PR Standards**: Enforced branch naming (`{prefix}/CCH/{project-initials}-{ticket-number}-{ticket-summary}`), Conventional Commits, and automated PR labeling.
-- **`/i-have-adhd` Mode by Default**: Action-first, numbered, direct communication style that eliminates conversational fluff and keeps execution momentum high.
+- **SMAE Clinical Alignment**: Standardized equivalent calculations covering all Mexican SMAE groups and subgroups.
+- **Strict $0 Infrastructure**: Powered by Vercel Eve / Vercel AI SDK, Groq Llama 3.3 70B (free tier), Neon Serverless Postgres (`pg_trgm` fuzzy search), and Vercel Hobby hosting.
+- **Deterministic Math**: Pure TypeScript calculation tools for 100% reproducible and auditable nutritional arithmetic (no LLM hallucination).
+- **Composite Macro Solver**: Automatically maps custom nutrition facts tables to canonical equivalent groups (15g CHO / 7g Prot / 5g Lip).
+- **Per-Meal & Daily Tracking**: Real-time intake logging in grams with instant meal and daily plan diffing.
+- **Excel Seed Pipeline**: Automated ingestion from reference `data/smae.xlsx` dataset.
 
 ---
 
-## 🚀 One-Prompt Creation with Any AI Agent
+## 🛠️ Tech Stack
 
-To start a new project from this template, prompt your AI agent:
-
-> *"Create a new project named `my-awesome-app` using `cesarchavezcal/agent-boilerplate` and complete the setup."*
-
-The AI agent will automatically:
-1. Run `gh repo create my-awesome-app --template cesarchavezcal/agent-boilerplate --public --clone`
-2. `cd my-awesome-app`
-3. Execute `/init-project` to interview your product concept, dynamically provision your tech stack, populate context files, and open the initial setup PR.
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Agent Runtime** | Vercel Eve / Vercel AI SDK | Agent orchestration and tool calling |
+| **LLM Engine** | Groq (`llama-3.3-70b-versatile`) | Fast, free-tier conversational understanding |
+| **Database** | Neon Serverless Postgres | Relational storage & `pg_trgm` fuzzy search |
+| **ORM & Migrations** | Drizzle ORM (`drizzle-kit`) | Type-safe schema and migration management |
+| **Testing** | Vitest | Deterministic test-driven development (TDD) |
+| **Hosting** | Vercel (Hobby Tier) | Serverless edge execution and web interface |
 
 ---
 
-## 🛠️ Manual Usage Guide
+## 🚀 Quickstart
 
-### 1. Create Repository from Template
+### 1. Prerequisites
+- Node.js 20+ & npm
+- Neon PostgreSQL database (`DATABASE_URL`)
+- Groq API Key (`GROQ_API_KEY`)
+
+### 2. Setup & Environment
 ```bash
-gh repo create my-new-app --template cesarchavezcal/agent-boilerplate --public --clone
-cd my-new-app
+cp .env.example .env.local
+# Add DATABASE_URL and GROQ_API_KEY
+npm install
 ```
 
-### 2. Run Automated Setup (`/init-project`)
-Start an agent session in your new workspace and execute:
+### 3. Database Migration & Seed
+```bash
+npm run db:push
+npm run db:seed
+```
+
+### 4. Run Development Agent
+```bash
+npm run dev
+```
+
+---
+
+## 🔄 SDD & Development Pipeline
+
+This project follows Spec-Driven Development (SDD) using the 7-step architecture pipeline:
 
 ```text
-/init-project
+/product-function ──> /grill-with-docs ──> /to-spec ──> /ia & /ooux ──> /to-tickets ──> /implement ──> /code-review
 ```
-
-This onboarding workflow will:
-1. Brainstorm domain requirements and scope the product ($y = f(x)$).
-2. Dynamically recommend and bootstrap the optimal tech stack & test runner (e.g. Next.js, FastAPI, Go, CLI).
-3. Populate [`CONTEXT.md`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/CONTEXT.md), [`AGENTS.md`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/AGENTS.md), [`MEMORY.md`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/MEMORY.md), [`README.md`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/README.md), and [`openspec/config.yaml`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/openspec/config.yaml).
-4. Discover stack-specific skills via `npx skills find` with interactive selection.
-5. Create a setup branch (`chore/CCH/initial-setup-project-context`) and open PR.
-
----
-
-## 🔄 Unified SDD & 7-Step Architecture Pipeline
-
-Every feature or bug follows the unified pipeline matrix:
-
-```text
-┌───────────────────────────────┬───────────────────────────────┬───────────────────────────────────────────┐
-│ SDD Canonical Phase           │ Specialized Skill Triggers    │ Artifact Target Paths                     │
-├───────────────────────────────┼───────────────────────────────┼───────────────────────────────────────────┤
-│ 1. /sdd-explore, /sdd-propose │ /product-function, /grill     │ docs/product-design/product_function.md   │
-│                               │                               │ openspec/changes/<change>/proposal.md     │
-│ 2. /sdd-spec                  │ /to-spec                      │ openspec/specs/<feature>/spec.md          │
-│ 3. /sdd-design                │ /ia, /ooux, /codebase-design  │ docs/product-design/ia.md, ooux.md        │
-│                               │                               │ openspec/changes/<change>/design.md       │
-│ 4. /sdd-tasks                 │ /to-tickets                   │ openspec/changes/<change>/tasks.md        │
-│ 5. /sdd-apply                 │ /implement, /harness, /team   │ Working source code + unit/integration    │
-│ 6. /sdd-verify                │ /code-review, .gga review     │ Review receipts + pre-commit audit        │
-│ 7. /sdd-archive               │ PR merge + /sdd-archive       │ openspec/changes/archive/<date>-<change>/ │
-└───────────────────────────────┴───────────────────────────────┴───────────────────────────────────────────┘
-```
-
-### Execution Routing Policy (`/sdd-apply`)
-- **Single-Ticket / Sequential Tasks**: `/sdd-apply` triggers `/implement`, which delegates to an isolated [`/harness`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/.agents/skills/harness/SKILL.md) subagent for strict Red ➔ Green ➔ Refactor TDD.
-- **Parallel Swarm Tasks**: `/sdd-apply --team` dispatches [`/team-cheap`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/.agents/skills/team-cheap/SKILL.md), fanning out parallel `/harness` subagents across decoupled modules.
-
----
-
-## 🛡️ Pre-Commit AI Code Review (GGA)
-
-This repository includes [`.gga`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/.gga) (Gentleman Guardian Angel) configured with the **Gemini / Antigravity (`agy`)** provider.
-
-- **Automated Gatekeeper**: Runs on every `git commit` to audit staged code against Section 6 coding rules in [`AGENTS.md`](file:///Users/cesaradalbertochavezcalderon/Personal/agent-boilerplate/AGENTS.md).
-- **Manual PR Check**: Run `gga run --pr-mode` in your terminal to evaluate all PR changes against `main`.
-- **Config Status**: Run `gga config` to inspect active provider and review patterns.
-
----
-
-## 🔄 Maintenance: Updating Skills & GGA
-
-### Updating Agent Skills
-When new skills or updates are released:
-```bash
-# 1. Update skills from ecosystem
-npx skills add mattpocock/skills -y
-npx skills add cesarchavezcal/personal-skills -y
-
-# 2. Resync skill registry & lockfile in chat
-/sdd-init reload the skills
-```
-
-### Updating GGA
-```bash
-brew update && brew upgrade gga
-gga install
-```
-
----
-
-## 📋 Git Conventions & PR Workflow
-
-All work follows the mandatory 4-step sequence:
-```text
-Create Branch ──> Make Changes & Commit ──> Push & Open PR ──> Merge into Base Branch
-```
-
-- **Branch Naming**:
-  - Initial Setup: `chore/CCH/initial-setup-{summary}`
-  - Features / Bugs: `{prefix}/CCH/{project-initials}-{ticket-number}-{ticket-summary}` (`feature`, `bugfix`, `chore`).
-- **Commit Format**: Conventional Commits `<prefix>(<scope>): <summary>`.
-- **PR Principles**: High-level 2–4 sentence summary of WHAT was delivered. Automated labels attached via `gh pr create --label "<label>"`.
-
----
-
-## ⚡ Slash Commands Quick Reference
-
-| Command | Purpose |
-|---|---|
-| `/init-project` | Run onboarding interview, dynamically bootstrap stack, and populate quad files |
-| `/sdd-init` | Initialize or reload OpenSpec persistence and `.atl/skill-registry.md` |
-| `/sdd-explore` | Deep codebase investigation and architectural mapping without modifying code |
-| `/product-function` | Scope feature as $y = f(x)$ with 10x Scope-Stripping |
-| `/grill-with-docs` | Stress-test feature scope and technical bounds against documentation |
-| `/to-spec` / `/sdd-spec` | Generate formal acceptance criteria and domain contracts in `openspec/specs/` |
-| `/ia` & `/ooux` | Generate Sitemap, User Flows, Object Cards, and ERD in `docs/product-design/` |
-| `/to-tickets` / `/sdd-tasks` | Decompose design into atomic test-first tickets in `tasks.md` |
-| `/sdd-apply` / `/implement` | Execute tasks autonomously via `/harness` (single) or `/team-cheap` (swarm) |
-| `/sdd-verify` / `/code-review` | Two-axis audit (Spec + Standards compliance) and GGA pre-commit verification |
-| `/sdd-archive` | Archive completed change into `openspec/changes/archive/` and sync living specs |
-| `/find-skills` | Search open ecosystem skills via `npx skills find` with interactive selection |
-| `/plan` | Generate implementation plan artifact with mandatory turn boundary pause |

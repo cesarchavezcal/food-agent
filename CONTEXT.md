@@ -1,49 +1,83 @@
-# Project Context (`CONTEXT.md`)
+# Food Agent (`CONTEXT.md`)
 
-This file holds the project's domain definition, architecture overview, and technology stack. Fill out these sections when initializing a new project from this boilerplate template.
-
----
-
-## 1. Project Overview
-
-- **Project Name**: `[Your Project Name]`
-- **Domain / Description**: `[Brief 1-2 sentence description of what this application does]`
-- **Target Audience / Mental Model**: `[Core user profile and mental model]`
+Personal diet-tracking AI agent based on the Mexican SMAE (*Sistema Mexicano de Alimentos Equivalentes*), designed for deterministic nutritional planning, composite equivalent calculations, and intake logging on a $0 stack.
 
 ---
 
-## 2. Technology Stack
+## 1. Domain Language & Glossary
 
-- **Frontend**: `[e.g., Next.js 16 (App Router), React 19, Tailwind CSS]`
-- **Backend / Database**: `[e.g., Supabase Postgres, Node.js, Python FastAPI]`
-- **Testing Framework**: `[e.g., Vitest, Jest, Playwright]`
-- **Deployment Platform**: `[e.g., Vercel, Railway, Docker, AWS]`
+### Core Entities
+
+**Equivalent Group (`Grupo Equivalente`)**:
+A standardized clinical category defined by SMAE where foods share approximately equivalent macronutrient profiles per portion (e.g., *Verduras*, *Frutas*, *Cereales sin grasa*, *AOA*, *Aceites y grasas*).
+_Avoid_: Food category, macro bucket.
+
+**Equivalent (`Equivalente` / `Porción`)**:
+A standardized unit of food that provides an established amount of energy and macronutrients within its assigned group (e.g., 1 eq Cereal = 15g CHO, 1 eq AOA = 7g Prot, 1 eq Grasa = 5g Lip).
+_Avoid_: Serving, unit, measure.
+
+**Food Item (`Alimento`)**:
+A cataloged or user-added food with a specific net weight (in grams) required to fulfill one equivalent, alongside full macronutrient values per portion or 100g.
+_Avoid_: Ingredient, product, item.
+
+**Nutrition Facts Table (`Tabla Nutrimental`)**:
+The declared per-100g or per-serving macronutrient breakdown (protein, lipids, carbohydrates) used to decompose a custom food across equivalent groups.
+_Avoid_: Label, info table.
+
+### Planning & Tracking
+
+**Meal Plan (`Plan de Alimentación`)**:
+A structured target breakdown specifying the number of equivalents allocated to each food group for a designated meal.
+_Avoid_: Diet, menu, recipe.
+
+**Meal Type (`Tiempo de Comida`)**:
+A designated eating period within the day (`desayuno`, `almuerzo`, `comida`, `colacion_1`, `colacion_2`, `cena`).
+_Avoid_: Meal event, eating slot.
+
+**Intake Log (`Registro de Ingesta`)**:
+A record of actual consumed food for a specific date and meal, tracked strictly in grams and mapped to covered equivalents and macronutrients.
+_Avoid_: Food diary entry, calorie log.
+
+**Daily Summary (`Resumen Diario`)**:
+An aggregated comparison between planned equivalents/macros and actual consumed food for a given calendar date.
+_Avoid_: Day report, balance.
 
 ---
 
-## 3. Key Architecture & File Layout
+## 2. Technology Stack ($0 Infrastructure)
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Agent Runtime** | Vercel Eve / Vercel AI SDK | Agent orchestration and tool routing |
+| **LLM Provider** | Groq (`llama-3.3-70b-versatile`) | Fast, free-tier natural language understanding |
+| **Database** | Neon Serverless Postgres (`pg_trgm`) | Relational persistence & fuzzy text search |
+| **ORM & Migrations** | Drizzle ORM (`drizzle-kit`) | Type-safe database client and migrations |
+| **Testing Framework** | Vitest | Deterministic TDD for mathematical tools |
+| **Hosting & Deployment** | Vercel (Hobby Tier) | Serverless execution and web interface |
+
+---
+
+## 3. Architecture & File Layout
 
 ```text
 .
-├── .atl/                   # Skill registry index (.atl/skill-registry.md)
-├── .gga                    # Gentleman Guardian Angel AI code review configuration
-├── .github/                # GitHub workflows, issue templates, and PR template
-├── AGENTS.md               # Primary operational rules, SDD pipeline, & coding standards
-├── CLAUDE.md               # Claude Code configuration pointer
-├── CONTEXT.md              # Project domain definition & tech stack
-├── MEMORY.md               # Durable memory & architectural decision records
-├── SKILLS.md               # High-level skill catalog and dynamic discovery guide
-├── openspec/               # Spec-Driven Development (specs/, changes/, config.yaml)
-├── scripts/                # Dynamic stack setup and skill installation scripts
-└── docs/
-    ├── planning/           # Implementation plans and walkthroughs
-    └── product-design/     # Product specs (/product-function, /ia, /ooux)
+├── agent/
+│   ├── instructions.md        # Bilingual (ES) SMAE agent system prompt
+│   ├── tools/                 # Deterministic TypeScript tools
+│   │   ├── getPlanPortions.ts
+│   │   ├── getGramsForPortion.ts
+│   │   ├── logNutritionFacts.ts
+│   │   ├── coverageForAmount.ts
+│   │   ├── logFood.ts
+│   │   └── getDailySummary.ts
+│   └── db/
+│       ├── schema.ts          # Drizzle Postgres schema
+│       ├── client.ts          # Neon serverless client
+│       └── import-excel.ts    # Seed parser for data/smae.xlsx
+├── data/
+│   └── smae.xlsx              # SMAE reference dataset (49 sheets)
+├── docs/
+│   ├── adr/                   # Architectural Decision Records
+│   └── planning/              # Implementation plans & specs
+└── openspec/                  # SDD specification files
 ```
-
----
-
-## 4. Key Conventions & Design System
-
-- **Styling**: Use Vanilla CSS / Tailwind utility classes.
-- **Components**: Functional React/Framework components with explicit prop interfaces.
-- **Formatting**: Actionable microcopy, accessible focus indicators, and reduced-motion support.
