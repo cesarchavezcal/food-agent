@@ -12,6 +12,8 @@ import { logNutritionFacts, logNutritionFactsSchema } from "./tools/logNutrition
 import { getPlanPortions, getPlanPortionsSchema } from "./tools/getPlanPortions.js";
 import { logFood, logFoodSchema } from "./tools/logFood.js";
 import { getDailySummary, getDailySummarySchema } from "./tools/getDailySummary.js";
+import { saveMealPlan } from "./tools/saveMealPlan.js";
+import { setWeeklySchedule } from "./tools/setWeeklySchedule.js";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -22,6 +24,18 @@ const instructions = fs.existsSync(instructionsPath)
   : "Eres un nutriólogo clínico experto en el Sistema Mexicano de Alimentos Equivalentes (SMAE).";
 
 const tools = {
+  saveMealPlan,
+  setWeeklySchedule,
+
+  getPlanPortions: tool({
+    description: "Obtiene las porciones planificadas por grupo para un plan o para el día actual.",
+    parameters: getPlanPortionsSchema,
+    execute: async (args) => {
+      console.log(`\x1b[36m[Tool: getPlanPortions]\x1b[0m Consultando plan/horario`);
+      return await getPlanPortions(args);
+    },
+  }),
+
   getGramsForPortion: tool({
     description: "Calcula los gramos netos sugeridos para N equivalentes de un alimento específico en el SMAE.",
     parameters: getGramsForPortionSchema,
@@ -46,15 +60,6 @@ const tools = {
     execute: async (args) => {
       console.log(`\x1b[36m[Tool: logNutritionFacts]\x1b[0m Guardando alimento "${args.foodName}"`);
       return await logNutritionFacts(args);
-    },
-  }),
-
-  getPlanPortions: tool({
-    description: "Obtiene las porciones planificadas por grupo para un plan o para el día actual.",
-    parameters: getPlanPortionsSchema,
-    execute: async (args) => {
-      console.log(`\x1b[36m[Tool: getPlanPortions]\x1b[0m Consultando plan/horario`);
-      return await getPlanPortions(args);
     },
   }),
 
