@@ -82,6 +82,44 @@ const tools = {
   }),
 };
 
+export function sanitizeTerminalTableInput(input: string): string {
+  const lines = input.split("\n");
+  const result: string[] = [];
+  let headerPipeCount = 0;
+  let buffer = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed) continue;
+
+    if (trimmed.startsWith("|") || buffer.startsWith("|")) {
+      buffer = buffer ? `${buffer} ${trimmed}`.replace(/\s+/g, " ") : trimmed;
+      const currentPipes = (buffer.match(/\|/g) || []).length;
+
+      // Determine header pipe count
+      if (headerPipeCount === 0 && buffer.toLowerCase().includes("grupo") && buffer.endsWith("|")) {
+        headerPipeCount = currentPipes;
+        result.push(buffer);
+        buffer = "";
+        continue;
+      }
+
+      if (headerPipeCount > 0 && currentPipes >= headerPipeCount) {
+        result.push(buffer);
+        buffer = "";
+      }
+    } else {
+      if (buffer) {
+        result.push(buffer);
+        buffer = "";
+      }
+      result.push(lines[i]);
+    }
+  }
+  if (buffer) result.push(buffer);
+  return result.join("\n");
+}
+
 async function main() {
   if (!process.env.GROQ_API_KEY) {
     console.error("❌ GROQ_API_KEY no está configurada en .env.local");
@@ -113,7 +151,8 @@ async function main() {
         break;
       }
 
-      messages.push({ role: "user", content: trimmed });
+      const sanitizedInput = sanitizeTerminalTableInput(trimmed);
+      messages.push({ role: "user", content: sanitizedInput });
 
       const result = await generateText({
         model: groq(modelName),
