@@ -93,12 +93,28 @@ export async function getPlanPortions(
     }
   }
 
+  function cleanSparse(obj: Record<string, number>): Record<string, number> {
+    const res: Record<string, number> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (v > 0) res[k] = v;
+    }
+    return res;
+  }
+
+  const sparseByMeal: Record<string, Record<string, number>> = {};
+  for (const [m, groupMap] of Object.entries(byMeal)) {
+    const cleaned = cleanSparse(groupMap);
+    if (Object.keys(cleaned).length > 0) {
+      sparseByMeal[m] = cleaned;
+    }
+  }
+
   return {
     planName: resolvedPlanName || "ALTA DEMANDA",
     meal,
     dayOfWeek: dayOfWeekName,
-    portions,
-    dailyTotal,
-    byMeal,
+    portions: cleanSparse(portions),
+    dailyTotal: cleanSparse(dailyTotal),
+    byMeal: sparseByMeal,
   };
 }

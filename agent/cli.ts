@@ -14,6 +14,7 @@ import { logFood, logFoodSchema } from "./tools/logFood.js";
 import { getDailySummary, getDailySummarySchema } from "./tools/getDailySummary.js";
 import { saveMealPlan } from "./tools/saveMealPlan.js";
 import { setWeeklySchedule } from "./tools/setWeeklySchedule.js";
+import { parseMarkdownMealPlanTable } from "./utils/tableParser.js";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -276,6 +277,44 @@ async function main() {
       const sanitizedInput = sanitizeTerminalTableInput(trimmed);
       messages.push({ role: "user", content: sanitizedInput });
       messages = pruneMessagesWindow(messages, 4);
+
+      // Deterministic Zero-Cost Table Pre-Parser
+      const parsedTable = parseMarkdownMealPlanTable(sanitizedInput);
+      if (parsedTable.isTable && parsedTable.planName && Object.keys(parsedTable.dailyTotal).length > 0) {
+        spinner.start(`Guardando plan "${parsedTable.planName}" en base de datos...`);
+        try {
+          const saved = await (saveMealPlan as any).execute({
+            planName: parsedTable.planName,
+            targetKcal: parsedTable.targetKcal,
+            targetProteinG: parsedTable.targetProteinG,
+            targetLipidsG: parsedTable.targetLipidsG,
+            targetCarbsG: parsedTable.targetCarbsG,
+            dailyTotal: parsedTable.dailyTotal,
+            byMeal: parsedTable.byMeal,
+          });
+          spinner.stop();
+
+          const responseText =
+            `✅ ¡Plan **${saved.planName}** guardado con éxito en Neon Postgres!\n\n` +
+            `🎯 **Metas**: ${saved.targetKcal ? `${saved.targetKcal} kcal` : "Calculado"} ` +
+            `${saved.targetProteinG ? `· ${saved.targetProteinG}g P` : ""} ` +
+            `${saved.targetLipidsG ? `· ${saved.targetLipidsG}g L` : ""} ` +
+            `${saved.targetCarbsG ? `· ${saved.targetCarbsG}g HC` : ""}\n\n` +
+            `📋 **Distribución Diaria Registrada**:\n` +
+            Object.entries(saved.dailyTotal)
+              .map(([g, eq]) => `- **${g}**: ${eq} eq`)
+              .join("\n") +
+            `\n\n*Procesado de forma determinista ($0 tokens consumidos).*`;
+
+          console.log(`\n\x1b[35m🤖 Nutriólogo SMAE:\x1b[0m\n${responseText}`);
+          messages.push({ role: "assistant", content: responseText });
+          messages = pruneMessagesWindow(messages, 4);
+          continue;
+        } catch (tableErr: any) {
+          spinner.stop();
+          console.error("Error al registrar plan automáticamente:", tableErr?.message || tableErr);
+        }
+      }
 
       spinner.start("Pensando y analizando solicitud...");
 
