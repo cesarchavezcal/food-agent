@@ -15,7 +15,9 @@ const groq = createGroq({
   apiKey: process.env.GROQ_API_KEY || "",
 });
 
-export const model = groq("llama-3.3-70b-versatile");
+const modelName = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+
+export const model = groq(modelName);
 
 // Export all tools for Eve agent runtime
 export const tools = {
