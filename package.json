@@ -5,13 +5,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npx eve dev",
+    "dev": "tsx agent/cli.ts",
+    "dev:eve": "eve dev",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:init": "tsx scripts/init-db.ts",
-    "db:push": "tsx scripts/init-db.ts && drizzle-kit push",
+    "db:push": "tsx scripts/init-db.ts",
     "db:seed": "tsx agent/db/import-excel.ts",
-    "db:setup": "npm run db:init && npm run db:push && npm run db:seed",
+    "db:setup": "npm run db:init && npm run db:seed",
     "db:studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit"
   },
@@ -28,6 +29,7 @@
     "@total-typescript/shoehorn": "^0.1.2",
     "@types/node": "^22.13.4",
     "drizzle-kit": "^0.30.4",
+    "eve": "^0.5.4",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"
