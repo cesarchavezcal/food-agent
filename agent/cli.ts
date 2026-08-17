@@ -83,9 +83,11 @@ async function main() {
     process.exit(1);
   }
 
+  const modelName = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+
   console.log("\n========================================================");
   console.log("🥗 Eve SMAE Diet Agent — Terminal Runner");
-  console.log("Modelo: Groq llama-3.3-70b-versatile ($0 Cost)");
+  console.log(`Modelo: Groq ${modelName} ($0 Cost)`);
   console.log("Escribe 'salir' o presiona Ctrl+C para terminar.");
   console.log("========================================================\n");
 
@@ -109,7 +111,7 @@ async function main() {
       messages.push({ role: "user", content: trimmed });
 
       const result = await generateText({
-        model: groq("llama-3.3-70b-versatile"),
+        model: groq(modelName),
         messages,
         tools,
         maxSteps: 5,
@@ -118,6 +120,9 @@ async function main() {
       console.log(`\n\x1b[35m🤖 Nutriólogo SMAE:\x1b[0m\n${result.text}`);
       messages.push({ role: "assistant", content: result.text });
     } catch (err: any) {
+      if (err?.code === "ERR_USE_AFTER_CLOSE" || err?.message?.includes("closed")) {
+        break;
+      }
       console.error("\x1b[31mError al procesar mensaje:\x1b[0m", err?.message || err);
     }
   }
