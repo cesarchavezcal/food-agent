@@ -7,6 +7,8 @@ import { coverageForAmount, coverageForAmountSchema } from "./tools/coverageForA
 import { logNutritionFacts, logNutritionFactsSchema } from "./tools/logNutritionFacts.js";
 import { logFood, logFoodSchema } from "./tools/logFood.js";
 import { getDailySummary, getDailySummarySchema } from "./tools/getDailySummary.js";
+import { saveMealPlan } from "./tools/saveMealPlan.js";
+import { setWeeklySchedule } from "./tools/setWeeklySchedule.js";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -26,6 +28,8 @@ export const tools = {
     parameters: getPlanPortionsSchema,
     execute: async (args) => await getPlanPortions(args),
   }),
+  saveMealPlan,
+  setWeeklySchedule,
 
   getGramsForPortion: tool({
     description: "Dado un alimento, calcula los gramos netos exactos que cubren 1 o N equivalentes según el SMAE mexicano.",

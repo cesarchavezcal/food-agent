@@ -1,26 +1,23 @@
 import { z } from "zod";
 import { db } from "../db/client.js";
 import { plans, weeklySchedule } from "../db/schema.js";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export const getPlanPortionsSchema = z.object({
-  planName: z.string().optional().describe("Nombre del plan (ej. leg day, cardio, rest day). Si se omite, se infiere del calendario"),
-  meal: z.string().optional().describe("Tiempo de comida (ej. desayuno, comida, cena, colacion_1)"),
+  planName: z.string().optional().describe("Nombre del plan (ej. 'ALTA DEMANDA', 'MEDIA', 'DESCANSO'). Si se omite, se infiere del calendario"),
+  meal: z.string().optional().describe("Tiempo de comida específico (ej. almuerzo, colacion_1, comida, cena)"),
   date: z.string().optional().describe("Fecha en formato YYYY-MM-DD para inferir el día de la semana"),
 });
 
 export type GetPlanPortionsInput = z.infer<typeof getPlanPortionsSchema>;
 
-export interface PlanPortionEntry {
-  groupId: string;
-  equivalentes: number;
-}
-
 export interface GetPlanPortionsResult {
   planName: string;
   meal?: string;
   dayOfWeek?: string;
-  portions: Record<string, number>; // { [groupId]: number of equivalents }
+  portions: Record<string, number>;
+  dailyTotal: Record<string, number>;
+  byMeal: Record<string, Record<string, number>>;
 }
 
 const DEFAULT_DAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -31,11 +28,11 @@ export async function getPlanPortions(
   mockSchedule?: typeof weeklySchedule.$inferSelect[]
 ): Promise<GetPlanPortionsResult> {
   const { meal, date } = getPlanPortionsSchema.parse(input);
-  let planName = input.planName;
+  let resolvedPlanName = input.planName;
 
   // 1. If planName is omitted, auto-resolve from date / today's day of week
   let dayOfWeekName: string | undefined;
-  if (!planName) {
+  if (!resolvedPlanName) {
     let targetDate: Date;
     if (date && date.includes("-")) {
       const [y, m, d] = date.split("-").map(Number);
@@ -47,52 +44,61 @@ export async function getPlanPortions(
 
     if (mockSchedule) {
       const match = mockSchedule.find((s) => s.dayOfWeek.toLowerCase() === dayOfWeekName);
-      planName = match?.planName || "default";
+      resolvedPlanName = match?.planName || "ALTA DEMANDA";
     } else if (db) {
       const schedResults = await db
         .select()
         .from(weeklySchedule)
         .where(eq(weeklySchedule.dayOfWeek, dayOfWeekName))
         .limit(1);
-      planName = schedResults[0]?.planName || "default";
+      resolvedPlanName = schedResults[0]?.planName || "ALTA DEMANDA";
     } else {
-      planName = "default";
+      resolvedPlanName = "ALTA DEMANDA";
     }
   }
 
   // 2. Query plan portions
   const portions: Record<string, number> = {};
+  const dailyTotal: Record<string, number> = {};
+  const byMeal: Record<string, Record<string, number>> = {};
 
   if (mockPlans) {
-    const matches = mockPlans.filter((p) => {
-      const matchPlan = p.planName.toLowerCase() === planName?.toLowerCase();
-      const matchMeal = meal ? p.meal.toLowerCase() === meal.toLowerCase() : true;
-      return matchPlan && matchMeal;
-    });
+    const matches = mockPlans.filter((p) => p.planName.toLowerCase() === resolvedPlanName?.toLowerCase());
 
     for (const p of matches) {
-      portions[p.groupId] = (portions[p.groupId] || 0) + p.equivalentes;
+      dailyTotal[p.groupId] = (dailyTotal[p.groupId] || 0) + p.equivalentes;
+
+      if (!byMeal[p.meal]) byMeal[p.meal] = {};
+      byMeal[p.meal][p.groupId] = (byMeal[p.meal][p.groupId] || 0) + p.equivalentes;
+
+      if (!meal || p.meal.toLowerCase() === meal.toLowerCase() || p.meal === "daily") {
+        portions[p.groupId] = (portions[p.groupId] || 0) + p.equivalentes;
+      }
     }
   } else if (db) {
-    const queryConditions = [eq(plans.planName, planName)];
-    if (meal) {
-      queryConditions.push(eq(plans.meal, meal));
-    }
-
-    const planRows = await db
+    const allRows = await db
       .select()
       .from(plans)
-      .where(and(...queryConditions));
+      .where(eq(plans.planName, resolvedPlanName!));
 
-    for (const row of planRows) {
-      portions[row.groupId] = (portions[row.groupId] || 0) + row.equivalentes;
+    for (const row of allRows) {
+      dailyTotal[row.groupId] = (dailyTotal[row.groupId] || 0) + row.equivalentes;
+
+      if (!byMeal[row.meal]) byMeal[row.meal] = {};
+      byMeal[row.meal][row.groupId] = (byMeal[row.meal][row.groupId] || 0) + row.equivalentes;
+
+      if (!meal || row.meal.toLowerCase() === meal.toLowerCase() || row.meal === "daily") {
+        portions[row.groupId] = (portions[row.groupId] || 0) + row.equivalentes;
+      }
     }
   }
 
   return {
-    planName,
+    planName: resolvedPlanName || "ALTA DEMANDA",
     meal,
     dayOfWeek: dayOfWeekName,
     portions,
+    dailyTotal,
+    byMeal,
   };
 }
