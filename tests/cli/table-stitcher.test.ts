@@ -40,9 +40,9 @@ describe("Terminal Table Stitcher (Multi-Line Row Wrap Recovery)", () => {
 
     expect(parsed.isTable).toBe(true);
     expect(parsed.planName).toBe("ALTA DEMANDA");
-    expect(parsed.dailyTotal.verdura).toBe(3);
-    expect(parsed.dailyTotal.fruta).toBe(4);
-    expect(parsed.dailyTotal.cereal_sg).toBe(14);
+    expect(parsed.dailyTotal.verduras).toBe(3);
+    expect(parsed.dailyTotal.frutas).toBe(4);
+    expect(parsed.dailyTotal.cereales_sin_grasa).toBe(14);
     expect(parsed.targetKcal).toBe(2550);
   });
 });

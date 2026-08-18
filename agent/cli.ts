@@ -428,6 +428,14 @@ async function main() {
           });
           spinner.stop();
 
+          if (!saved || !saved.success) {
+            const errorMsg = `❌ Error al guardar plan "${parsedTable.planName}": ${saved?.error || "Error desconocido"}`;
+            console.log(`\n\x1b[31m${errorMsg}\x1b[0m`);
+            messages.push({ role: "assistant", content: errorMsg });
+            messages = pruneMessagesWindow(messages, 4);
+            continue;
+          }
+
           const responseText =
             `✅ ¡Plan **${saved.planName}** guardado con éxito en Neon Postgres!\n\n` +
             `🎯 **Metas**: ${saved.targetKcal ? `${saved.targetKcal} kcal` : "Calculado"} ` +

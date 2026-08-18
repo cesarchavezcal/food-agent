@@ -19,6 +19,65 @@ export const saveMealPlanSchema = z.object({
     .describe("Breakdown of equivalent portions partitioned by meal (e.g. { almuerzo: { verdura: 2, fruta: 2 }, comida: { ... } })"),
 });
 
+const CANONICAL_GROUP_IDS: Record<string, string> = {
+  verdura: "verduras",
+  verduras: "verduras",
+  fruta: "frutas",
+  frutas: "frutas",
+  cereal: "cereales_sin_grasa",
+  cereales: "cereales_sin_grasa",
+  cereal_sg: "cereales_sin_grasa",
+  cereal_sin_grasa: "cereales_sin_grasa",
+  "cereal s/grasa": "cereales_sin_grasa",
+  "cereales s/grasa": "cereales_sin_grasa",
+  "cereal sin grasa": "cereales_sin_grasa",
+  cereales_sin_grasa: "cereales_sin_grasa",
+  cereal_cg: "cereales_con_grasa",
+  cereal_con_grasa: "cereales_con_grasa",
+  "cereal c/grasa": "cereales_con_grasa",
+  "cereales c/grasa": "cereales_con_grasa",
+  cereales_con_grasa: "cereales_con_grasa",
+  leguminosa: "leguminosas",
+  leguminosas: "leguminosas",
+  aoa: "aoa_muy_bajo_grasa",
+  aoa_mbag: "aoa_muy_bajo_grasa",
+  aoa_muy_bajo_grasa: "aoa_muy_bajo_grasa",
+  "aoa mbag": "aoa_muy_bajo_grasa",
+  aoa_bag: "aoa_bajo_grasa",
+  aoa_bajo_grasa: "aoa_bajo_grasa",
+  aoa_mag: "aoa_moderado_grasa",
+  aoa_moderado_grasa: "aoa_moderado_grasa",
+  aoa_aag: "aoa_alto_grasa",
+  aoa_alto_grasa: "aoa_alto_grasa",
+  leche: "leche_descremada",
+  leche_descremada: "leche_descremada",
+  "leche descremada": "leche_descremada",
+  leche_semidescremada: "leche_semidescremada",
+  leche_entera: "leche_entera",
+  leche_con_azucar: "leche_con_azucar",
+  grasa: "aceites_y_grasas",
+  grasas: "aceites_y_grasas",
+  "grasa s/prot": "aceites_y_grasas",
+  "grasas s/prot": "aceites_y_grasas",
+  "aceite s/prot": "aceites_y_grasas",
+  aceites_sin_proteina: "aceites_y_grasas",
+  aceites_y_grasas: "aceites_y_grasas",
+  "grasa c/prot": "aceites_y_grasas_con_proteina",
+  "grasas c/prot": "aceites_y_grasas_con_proteina",
+  "aceite c/prot": "aceites_y_grasas_con_proteina",
+  aceites_con_proteina: "aceites_y_grasas_con_proteina",
+  aceites_y_grasas_con_proteina: "aceites_y_grasas_con_proteina",
+  azucar: "azucares_sin_grasa",
+  azucares: "azucares_sin_grasa",
+  azucares_sin_grasa: "azucares_sin_grasa",
+  azucares_con_grasa: "azucares_con_grasa",
+};
+
+export function normalizeSmaeGroupId(groupId: string): string {
+  const clean = groupId.trim().toLowerCase();
+  return CANONICAL_GROUP_IDS[clean] || clean;
+}
+
 export const saveMealPlan = tool({
   description:
     "Saves or updates a multi-meal clinical nutrition plan with daily targets and per-meal portion breakdowns in the database.",
@@ -37,26 +96,28 @@ export const saveMealPlan = tool({
         // Insert per-meal entries if provided
         if (byMeal && Object.keys(byMeal).length > 0) {
           for (const [mealName, groupMap] of Object.entries(byMeal)) {
-            for (const [groupId, equivalentes] of Object.entries(groupMap)) {
+            for (const [rawGroupId, equivalentes] of Object.entries(groupMap)) {
               if (equivalentes <= 0) continue;
+              const groupId = normalizeSmaeGroupId(rawGroupId);
               rowsToInsert.push({
                 id: `${planSlug}_${mealName}_${groupId}`,
                 planName: normalizedPlanName,
                 meal: mealName.toLowerCase().trim(),
-                groupId: groupId.trim(),
+                groupId,
                 equivalentes,
               });
             }
           }
         } else {
           // If no per-meal breakdown, insert daily total as meal='daily'
-          for (const [groupId, equivalentes] of Object.entries(dailyTotal)) {
+          for (const [rawGroupId, equivalentes] of Object.entries(dailyTotal)) {
             if (equivalentes <= 0) continue;
+            const groupId = normalizeSmaeGroupId(rawGroupId);
             rowsToInsert.push({
               id: `${planSlug}_daily_${groupId}`,
               planName: normalizedPlanName,
               meal: "daily",
-              groupId: groupId.trim(),
+              groupId,
               equivalentes,
             });
           }

@@ -10,34 +10,55 @@ export interface ParsedMealPlan {
 }
 
 const GROUP_MAPPING: Record<string, string> = {
-  verdura: "verdura",
-  verduras: "verdura",
-  fruta: "fruta",
-  frutas: "fruta",
-  "cereal s/grasa": "cereal_sg",
-  "cereales s/grasa": "cereal_sg",
-  "cereal sin grasa": "cereal_sg",
-  cereal: "cereal_sg",
-  cereales: "cereal_sg",
-  "cereal c/grasa": "cereal_cg",
-  "cereales c/grasa": "cereal_cg",
-  aoa: "aoa_mbag",
-  "aoa mbag": "aoa_mbag",
-  "aoa bag": "aoa_bag",
-  "aoa mag": "aoa_mag",
-  "aoa aag": "aoa_aag",
+  verdura: "verduras",
+  verduras: "verduras",
+  fruta: "frutas",
+  frutas: "frutas",
+  "cereal s/grasa": "cereales_sin_grasa",
+  "cereales s/grasa": "cereales_sin_grasa",
+  "cereal sin grasa": "cereales_sin_grasa",
+  cereal_sg: "cereales_sin_grasa",
+  cereal_sin_grasa: "cereales_sin_grasa",
+  cereal: "cereales_sin_grasa",
+  cereales: "cereales_sin_grasa",
+  "cereal c/grasa": "cereales_con_grasa",
+  "cereales c/grasa": "cereales_con_grasa",
+  cereal_cg: "cereales_con_grasa",
+  cereal_con_grasa: "cereales_con_grasa",
+  aoa: "aoa_muy_bajo_grasa",
+  "aoa mbag": "aoa_muy_bajo_grasa",
+  aoa_mbag: "aoa_muy_bajo_grasa",
+  aoa_muy_bajo_grasa: "aoa_muy_bajo_grasa",
+  "aoa bag": "aoa_bajo_grasa",
+  aoa_bag: "aoa_bajo_grasa",
+  aoa_bajo_grasa: "aoa_bajo_grasa",
+  "aoa mag": "aoa_moderado_grasa",
+  aoa_mag: "aoa_moderado_grasa",
+  aoa_moderado_grasa: "aoa_moderado_grasa",
+  "aoa aag": "aoa_alto_grasa",
+  aoa_aag: "aoa_alto_grasa",
+  aoa_alto_grasa: "aoa_alto_grasa",
   leche: "leche_descremada",
   "leche descremada": "leche_descremada",
+  leche_descremada: "leche_descremada",
   leguminosas: "leguminosas",
   leguminosa: "leguminosas",
-  "grasa s/prot": "aceites_sin_proteina",
-  "grasas s/prot": "aceites_sin_proteina",
-  "aceite s/prot": "aceites_sin_proteina",
-  "grasa c/prot": "aceites_con_proteina",
-  "grasas c/prot": "aceites_con_proteina",
-  "aceite c/prot": "aceites_con_proteina",
+  "grasa s/prot": "aceites_y_grasas",
+  "grasas s/prot": "aceites_y_grasas",
+  "aceite s/prot": "aceites_y_grasas",
+  "aceites s/prot": "aceites_y_grasas",
+  aceites_sin_proteina: "aceites_y_grasas",
+  aceites_y_grasas: "aceites_y_grasas",
+  "grasa c/prot": "aceites_y_grasas_con_proteina",
+  "grasas c/prot": "aceites_y_grasas_con_proteina",
+  "aceite c/prot": "aceites_y_grasas_con_proteina",
+  "aceites c/prot": "aceites_y_grasas_con_proteina",
+  aceites_con_proteina: "aceites_y_grasas_con_proteina",
+  aceites_y_grasas_con_proteina: "aceites_y_grasas_con_proteina",
   azucares: "azucares_sin_grasa",
   azucar: "azucares_sin_grasa",
+  azucares_sin_grasa: "azucares_sin_grasa",
+  azucares_con_grasa: "azucares_con_grasa",
 };
 
 export function parseMarkdownMealPlanTable(input: string): ParsedMealPlan {
@@ -96,7 +117,7 @@ export function parseMarkdownMealPlanTable(input: string): ParsedMealPlan {
   let totalColIndex = -1;
 
   for (let i = 1; i < rawHeaders.length; i++) {
-    const h = rawHeaders[i].toLowerCase();
+    const h = rawHeaders[i].replace(/\*/g, "").trim().toLowerCase();
     if (h === "total") {
       totalColIndex = i;
     } else {
@@ -118,9 +139,10 @@ export function parseMarkdownMealPlanTable(input: string): ParsedMealPlan {
 
   for (let r = headerIdx + 1; r < tableLines.length; r++) {
     const row = tableLines[r];
-    if (row.includes("---") || row.toLowerCase().includes("meta kcal")) {
-      if (row.toLowerCase().includes("meta kcal") && !targetKcal) {
-        const cells = row.split("|").map((c) => c.trim()).filter(Boolean);
+    const cleanRow = row.replace(/\*/g, "");
+    if (cleanRow.includes("---") || cleanRow.toLowerCase().includes("meta kcal")) {
+      if (cleanRow.toLowerCase().includes("meta kcal") && !targetKcal) {
+        const cells = cleanRow.split("|").map((c) => c.trim()).filter(Boolean);
         const lastCell = cells[cells.length - 1]?.replace(/,/g, "");
         if (lastCell && !isNaN(parseFloat(lastCell))) {
           targetKcal = parseFloat(lastCell);
@@ -129,7 +151,7 @@ export function parseMarkdownMealPlanTable(input: string): ParsedMealPlan {
       continue;
     }
 
-    const cells = row.split("|").map((c) => c.trim()).filter(Boolean);
+    const cells = row.split("|").map((c) => c.replace(/\*/g, "").trim()).filter(Boolean);
     if (cells.length < 2) continue;
 
     const rawGroupName = cells[0].toLowerCase();
