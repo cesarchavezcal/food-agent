@@ -24,17 +24,17 @@ describe("Deterministic Markdown Meal Plan Table Parser", () => {
     expect(parsed.targetLipidsG).toBe(73);
     expect(parsed.targetCarbsG).toBe(315);
 
-    expect(parsed.dailyTotal.verdura).toBe(3);
-    expect(parsed.dailyTotal.fruta).toBe(4);
-    expect(parsed.dailyTotal.cereal_sg).toBe(14);
-    expect(parsed.dailyTotal.aoa_mbag).toBe(14);
+    expect(parsed.dailyTotal.verduras).toBe(3);
+    expect(parsed.dailyTotal.frutas).toBe(4);
+    expect(parsed.dailyTotal.cereales_sin_grasa).toBe(14);
+    expect(parsed.dailyTotal.aoa_muy_bajo_grasa).toBe(14);
     expect(parsed.dailyTotal.leche_descremada).toBe(2);
-    expect(parsed.dailyTotal.aceites_sin_proteina).toBe(8);
-    expect(parsed.dailyTotal.aceites_con_proteina).toBe(3);
+    expect(parsed.dailyTotal.aceites_y_grasas).toBe(8);
+    expect(parsed.dailyTotal.aceites_y_grasas_con_proteina).toBe(3);
 
-    expect(parsed.byMeal?.almuerzo?.verdura).toBe(2);
-    expect(parsed.byMeal?.almuerzo?.cereal_sg).toBe(5);
-    expect(parsed.byMeal?.cena?.cereal_sg).toBe(3);
+    expect(parsed.byMeal?.almuerzo?.verduras).toBe(2);
+    expect(parsed.byMeal?.almuerzo?.cereales_sin_grasa).toBe(5);
+    expect(parsed.byMeal?.cena?.cereales_sin_grasa).toBe(3);
   });
 
   it("should infer plan name from total calories if title is missing", () => {
