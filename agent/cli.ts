@@ -14,10 +14,16 @@ import { logFood, logFoodSchema } from "./tools/logFood.js";
 import { getDailySummary, getDailySummarySchema } from "./tools/getDailySummary.js";
 import { saveMealPlan } from "./tools/saveMealPlan.js";
 import { setWeeklySchedule } from "./tools/setWeeklySchedule.js";
+import { listPlans } from "./tools/listPlans.js";
 import { parseMarkdownMealPlanTable } from "./utils/tableParser.js";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
+
+export const isDebugMode =
+  process.argv.includes("--debug") ||
+  process.env.DEBUG === "1" ||
+  process.env.DEBUG === "true";
 
 const instructionsPath = path.join(process.cwd(), "agent/instructions.md");
 const instructions = fs.existsSync(instructionsPath)
@@ -27,13 +33,25 @@ const instructions = fs.existsSync(instructionsPath)
 const tools = {
   saveMealPlan,
   setWeeklySchedule,
+  listPlans: tool({
+    description: "Lista todos los planes de alimentación registrados en la base de datos con sus metas de calorías y distribución de porciones.",
+    parameters: (listPlans as any).parameters,
+    execute: async (args) => {
+      if (isDebugMode) console.log(`\x1b[36m[DEBUG Tool Call: listPlans]\x1b[0m`, args);
+      const res = await (listPlans as any).execute(args);
+      if (isDebugMode) console.log(`\x1b[32m[DEBUG Tool Result: listPlans]\x1b[0m`, JSON.stringify(res));
+      return res;
+    },
+  }),
 
   getPlanPortions: tool({
     description: "Obtiene las porciones planificadas por grupo para un plan o para el día actual.",
     parameters: getPlanPortionsSchema,
     execute: async (args) => {
-      console.log(`\x1b[36m[Tool: getPlanPortions]\x1b[0m Consultando plan/horario`);
-      return await getPlanPortions(args);
+      if (isDebugMode) console.log(`\x1b[36m[DEBUG Tool Call: getPlanPortions]\x1b[0m`, args);
+      const res = await getPlanPortions(args);
+      if (isDebugMode) console.log(`\x1b[32m[DEBUG Tool Result: getPlanPortions]\x1b[0m`, JSON.stringify(res));
+      return res;
     },
   }),
 
@@ -41,8 +59,10 @@ const tools = {
     description: "Calcula los gramos netos sugeridos para N equivalentes de un alimento específico en el SMAE.",
     parameters: getGramsForPortionSchema,
     execute: async (args) => {
-      console.log(`\x1b[36m[Tool: getGramsForPortion]\x1b[0m ${args.nEquivalentes ?? 1} eq de "${args.foodName}"`);
-      return await getGramsForPortion(args);
+      if (isDebugMode) console.log(`\x1b[36m[DEBUG Tool Call: getGramsForPortion]\x1b[0m`, args);
+      const res = await getGramsForPortion(args);
+      if (isDebugMode) console.log(`\x1b[32m[DEBUG Tool Result: getGramsForPortion]\x1b[0m`, JSON.stringify(res));
+      return res;
     },
   }),
 
@@ -50,17 +70,21 @@ const tools = {
     description: "Calcula cuántos equivalentes y macronutrientes cubren X gramos consumidos de un alimento.",
     parameters: coverageForAmountSchema,
     execute: async (args) => {
-      console.log(`\x1b[36m[Tool: coverageForAmount]\x1b[0m ${args.grams}g de "${args.foodName}"`);
-      return await coverageForAmount(args);
+      if (isDebugMode) console.log(`\x1b[36m[DEBUG Tool Call: coverageForAmount]\x1b[0m`, args);
+      const res = await coverageForAmount(args);
+      if (isDebugMode) console.log(`\x1b[32m[DEBUG Tool Result: coverageForAmount]\x1b[0m`, JSON.stringify(res));
+      return res;
     },
   }),
 
   logNutritionFacts: tool({
-    description: "Descompone una tabla nutrimental en equivalentes SMAE canónicos (15g CHO -> Cereal, 7g Prot -> AOA, 5g Lip -> Grasa) y lo guarda en el catálogo.",
+    description: "Descompone una tabla nutrimental en equivalentes SMAE canónicos y lo guarda en el catálogo.",
     parameters: logNutritionFactsSchema,
     execute: async (args) => {
-      console.log(`\x1b[36m[Tool: logNutritionFacts]\x1b[0m Guardando alimento "${args.foodName}"`);
-      return await logNutritionFacts(args);
+      if (isDebugMode) console.log(`\x1b[36m[DEBUG Tool Call: logNutritionFacts]\x1b[0m`, args);
+      const res = await logNutritionFacts(args);
+      if (isDebugMode) console.log(`\x1b[32m[DEBUG Tool Result: logNutritionFacts]\x1b[0m`, JSON.stringify(res));
+      return res;
     },
   }),
 
@@ -68,8 +92,10 @@ const tools = {
     description: "Registra el consumo real de un alimento en una comida en gramos exactos.",
     parameters: logFoodSchema,
     execute: async (args) => {
-      console.log(`\x1b[36m[Tool: logFood]\x1b[0m Registrando ${args.grams}g de "${args.foodName}" en ${args.meal}`);
-      return await logFood(args);
+      if (isDebugMode) console.log(`\x1b[36m[DEBUG Tool Call: logFood]\x1b[0m`, args);
+      const res = await logFood(args);
+      if (isDebugMode) console.log(`\x1b[32m[DEBUG Tool Result: logFood]\x1b[0m`, JSON.stringify(res));
+      return res;
     },
   }),
 
@@ -77,8 +103,10 @@ const tools = {
     description: "Genera el resumen diario comparando lo consumido contra el plan objetivo del día.",
     parameters: getDailySummarySchema,
     execute: async (args) => {
-      console.log(`\x1b[36m[Tool: getDailySummary]\x1b[0m Resumen del día ${args.date ?? "hoy"}`);
-      return await getDailySummary(args);
+      if (isDebugMode) console.log(`\x1b[36m[DEBUG Tool Call: getDailySummary]\x1b[0m`, args);
+      const res = await getDailySummary(args);
+      if (isDebugMode) console.log(`\x1b[32m[DEBUG Tool Result: getDailySummary]\x1b[0m`, JSON.stringify(res));
+      return res;
     },
   }),
 };
@@ -86,26 +114,33 @@ const tools = {
 export function sanitizeTerminalTableInput(input: string): string {
   const lines = input.split("\n");
   const result: string[] = [];
-  let headerPipeCount = 0;
+  let expectedPipes = 0;
   let buffer = "";
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
     if (!trimmed) continue;
 
-    if (trimmed.startsWith("|") || buffer.startsWith("|")) {
-      buffer = buffer ? `${buffer} ${trimmed}`.replace(/\s+/g, " ") : trimmed;
-      const currentPipes = (buffer.match(/\|/g) || []).length;
+    const isTableFragment = trimmed.startsWith("|") || trimmed.includes("|") || buffer.startsWith("|");
 
-      // Determine header pipe count
-      if (headerPipeCount === 0 && buffer.toLowerCase().includes("grupo") && buffer.endsWith("|")) {
-        headerPipeCount = currentPipes;
-        result.push(buffer);
-        buffer = "";
-        continue;
+    if (isTableFragment) {
+      buffer = buffer ? `${buffer} ${trimmed}`.replace(/\s+/g, " ") : trimmed;
+      const pipeCount = (buffer.match(/\|/g) || []).length;
+
+      if (expectedPipes === 0) {
+        if (buffer.toLowerCase().includes("grupo") && buffer.endsWith("|")) {
+          expectedPipes = pipeCount;
+        } else if (buffer.includes("---") && buffer.endsWith("|")) {
+          expectedPipes = pipeCount;
+        } else if (buffer.endsWith("|") && pipeCount >= 4) {
+          expectedPipes = pipeCount;
+        }
       }
 
-      if (headerPipeCount > 0 && currentPipes >= headerPipeCount) {
+      if (expectedPipes > 0 && pipeCount >= expectedPipes && buffer.endsWith("|")) {
+        result.push(buffer);
+        buffer = "";
+      } else if (expectedPipes === 0 && buffer.endsWith("|") && pipeCount >= 4) {
         result.push(buffer);
         buffer = "";
       }
@@ -117,6 +152,7 @@ export function sanitizeTerminalTableInput(input: string): string {
       result.push(lines[i]);
     }
   }
+
   if (buffer) result.push(buffer);
   return result.join("\n");
 }
@@ -237,7 +273,27 @@ export async function generateTextWithFallback(
 
     while (attempt <= maxRetries) {
       try {
-        return await generateText(getParams(currentModel));
+        const result = await generateText(getParams(currentModel));
+        if (!result.text || result.text.trim() === "") {
+          const lastStepWithText = result.steps
+            .slice()
+            .reverse()
+            .find((s) => s.text && s.text.trim().length > 0);
+          if (lastStepWithText && lastStepWithText.text.trim()) {
+            return { ...result, text: lastStepWithText.text.trim() };
+          }
+          if (modelIdx < candidateModels.length - 1) {
+            const nextModel = candidateModels[modelIdx + 1];
+            if (isDebugMode) {
+              console.log(
+                `\n\x1b[33m[DEBUG] Modelo '${currentModel}' devolvió texto vacío. Reintentando con '${nextModel}'...\x1b[0m`
+              );
+            }
+            modelIdx++;
+            break;
+          }
+        }
+        return result;
       } catch (err: any) {
         const errMsg = err?.message || String(err);
         const isRateLimit =
@@ -328,6 +384,9 @@ async function main() {
   if (modelCandidates.length > 1) {
     console.log(`Cascada Fallback: ${modelCandidates.slice(1).join(" -> ")}`);
   }
+  if (isDebugMode) {
+    console.log(`\x1b[36m[Modo Debug Activado: --debug]\x1b[0m`);
+  }
   console.log("Escribe 'salir' o presiona Ctrl+C para terminar.");
   console.log("========================================================\n");
 
@@ -408,8 +467,13 @@ async function main() {
         spinner.stop();
       }
 
-      console.log(`\n\x1b[35m🤖 Nutriólogo SMAE:\x1b[0m\n${result.text}`);
-      messages.push({ role: "assistant", content: result.text });
+      const replyText =
+        result.text && result.text.trim().length > 0
+          ? result.text.trim()
+          : "He procesado tu consulta. ¿Deseas consultar algún detalle o porción específica?";
+
+      console.log(`\n\x1b[35m🤖 Nutriólogo SMAE:\x1b[0m\n${replyText}`);
+      messages.push({ role: "assistant", content: replyText });
       messages = pruneMessagesWindow(messages, 4);
     } catch (err: any) {
       spinner.stop();
