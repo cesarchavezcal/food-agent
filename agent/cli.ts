@@ -172,6 +172,28 @@ export function pruneMessagesWindow(
   return [systemMsg, ...recent];
 }
 
+export function getModelCascade(envModel?: string): string[] {
+  const defaults = ["openai/gpt-oss-20b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b"];
+  if (envModel && !defaults.includes(envModel)) {
+    return [envModel, ...defaults];
+  }
+  if (envModel && defaults.includes(envModel)) {
+    return [envModel, ...defaults.filter((m) => m !== envModel)];
+  }
+  return defaults;
+}
+
+export function isModelNotFoundError(err: any): boolean {
+  const msg = (err?.message || String(err)).toLowerCase();
+  return (
+    err?.status === 404 ||
+    msg.includes("not found") ||
+    msg.includes("decommissioned") ||
+    msg.includes("does not exist") ||
+    msg.includes("model_not_found")
+  );
+}
+
 export async function generateTextWithRetry(
   params: Parameters<typeof generateText>[0],
   maxRetries: number = 3
@@ -200,6 +222,55 @@ export async function generateTextWithRetry(
       throw err;
     }
   }
+}
+
+export async function generateTextWithFallback(
+  getParams: (modelName: string) => Parameters<typeof generateText>[0],
+  candidateModels: string[],
+  maxRetries: number = 3
+): Promise<ReturnType<typeof generateText>> {
+  let modelIdx = 0;
+
+  while (modelIdx < candidateModels.length) {
+    const currentModel = candidateModels[modelIdx];
+    let attempt = 0;
+
+    while (attempt <= maxRetries) {
+      try {
+        return await generateText(getParams(currentModel));
+      } catch (err: any) {
+        const errMsg = err?.message || String(err);
+        const isRateLimit =
+          err?.status === 429 ||
+          errMsg.toLowerCase().includes("rate limit") ||
+          errMsg.toLowerCase().includes("tpm");
+
+        if (isRateLimit && attempt < maxRetries) {
+          attempt++;
+          const delayMs = extractRetryDelay(errMsg);
+          const seconds = (delayMs / 1000).toFixed(1);
+          console.log(
+            `\n\x1b[33m⏳ Límite de tokens de Groq alcanzado en ${currentModel}. Esperando ${seconds}s para continuar automáticamente (intento ${attempt}/${maxRetries})...\x1b[0m`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          continue;
+        }
+
+        if (isModelNotFoundError(err) && modelIdx < candidateModels.length - 1) {
+          const nextModel = candidateModels[modelIdx + 1];
+          console.log(
+            `\n\x1b[33m⚠️ Modelo '${currentModel}' no disponible o deprecado. Cambiando automáticamente a '${nextModel}'...\x1b[0m`
+          );
+          modelIdx++;
+          break;
+        }
+
+        throw err;
+      }
+    }
+  }
+
+  throw new Error("Todos los modelos candidatos fallaron.");
 }
 
 export interface CliSpinner {
@@ -248,11 +319,15 @@ async function main() {
     process.exit(1);
   }
 
-  const modelName = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+  const modelCandidates = getModelCascade(process.env.GROQ_MODEL);
+  const primaryModel = modelCandidates[0];
 
   console.log("\n========================================================");
   console.log("🥗 Eve SMAE Diet Agent — Terminal Runner");
-  console.log(`Modelo: Groq ${modelName} ($0 Cost)`);
+  console.log(`Modelo Primario: Groq ${primaryModel} ($0 Cost)`);
+  if (modelCandidates.length > 1) {
+    console.log(`Cascada Fallback: ${modelCandidates.slice(1).join(" -> ")}`);
+  }
   console.log("Escribe 'salir' o presiona Ctrl+C para terminar.");
   console.log("========================================================\n");
 
@@ -320,12 +395,15 @@ async function main() {
 
       let result;
       try {
-        result = await generateTextWithRetry({
-          model: groq(modelName),
-          messages,
-          tools,
-          maxSteps: 5,
-        });
+        result = await generateTextWithFallback(
+          (mName) => ({
+            model: groq(mName),
+            messages,
+            tools,
+            maxSteps: 5,
+          }),
+          modelCandidates
+        );
       } finally {
         spinner.stop();
       }
