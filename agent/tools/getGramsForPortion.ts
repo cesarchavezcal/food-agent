@@ -3,6 +3,7 @@ import { db } from "../db/client.js";
 import { foods } from "../db/schema.js";
 import { foodCache, type CachedFood } from "./cache.js";
 import { ilike } from "drizzle-orm";
+import { normalizeFoodQuery } from "../utils/synonyms.js";
 
 export const getGramsForPortionSchema = z.object({
   foodName: z.string().min(1).describe("Nombre del alimento en español (ej. pechuga de pollo, arroz cocido, manzana)"),
@@ -32,7 +33,8 @@ export async function getGramsForPortion(
   mockCatalog?: CachedFood[]
 ): Promise<GramsForPortionResult | null> {
   const parsed = getGramsForPortionSchema.parse(input);
-  const foodName = parsed.foodName;
+  const normalizedName = normalizeFoodQuery(parsed.foodName);
+  const foodName = normalizedName;
   const nEquivalentes = parsed.nEquivalentes ?? 1;
 
   // 1. Check in-memory LRU Cache (0ms)
@@ -60,7 +62,12 @@ export async function getGramsForPortion(
   // 2. Mock catalog fallback for unit tests without DB
   if (mockCatalog) {
     const normQuery = foodName.toLowerCase();
-    const match = mockCatalog.find((f) => f.name.toLowerCase().includes(normQuery));
+    const match = mockCatalog.find(
+      (f) =>
+        f.name.toLowerCase().includes(normQuery) ||
+        normQuery.split(" ").every((w) => f.name.toLowerCase().includes(w)) ||
+        (f.id && normQuery.includes(f.id))
+    );
     if (match) {
       foodCache.set(foodName, match);
       const totalGrams = Number((match.gramsPerEquivalent * nEquivalentes).toFixed(1));

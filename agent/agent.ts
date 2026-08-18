@@ -17,7 +17,7 @@ const groq = createGroq({
   apiKey: process.env.GROQ_API_KEY || "",
 });
 
-const modelName = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
+const modelName = process.env.GROQ_MODEL || "qwen/qwen3.6-27b";
 
 export const model = groq(modelName);
 

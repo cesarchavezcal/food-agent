@@ -173,7 +173,7 @@ export function pruneMessagesWindow(
 }
 
 export function getModelCascade(envModel?: string): string[] {
-  const defaults = ["openai/gpt-oss-20b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b"];
+  const defaults = ["qwen/qwen3.6-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"];
   if (envModel && !defaults.includes(envModel)) {
     return [envModel, ...defaults];
   }
