@@ -9,6 +9,7 @@ import { logFood, logFoodSchema } from "./tools/logFood.js";
 import { getDailySummary, getDailySummarySchema } from "./tools/getDailySummary.js";
 import { saveMealPlan } from "./tools/saveMealPlan.js";
 import { setWeeklySchedule } from "./tools/setWeeklySchedule.js";
+import { listPlans } from "./tools/listPlans.js";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -23,6 +24,7 @@ export const model = groq(modelName);
 
 // Export all tools for Eve agent runtime
 export const tools = {
+  listPlans,
   getPlanPortions: tool({
     description: "Obtiene las porciones planificadas (equivalentes por grupo SMAE) para una comida y plan específico, o las infiere del día de hoy.",
     parameters: getPlanPortionsSchema,
