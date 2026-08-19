@@ -55,10 +55,41 @@ npm run dev
 
 ---
 
-## 🔄 SDD & Development Pipeline
+## 🔄 Unified SDD & 7-Step Architecture Pipeline
 
-This project follows Spec-Driven Development (SDD) using the 7-step architecture pipeline:
+Every feature or bug follows the unified pipeline matrix:
 
 ```text
-/product-function ──> /grill-with-docs ──> /to-spec ──> /ia & /ooux ──> /to-tickets ──> /implement ──> /code-review
+┌───────────────────────────────┬───────────────────────────────┬───────────────────────────────────────────┐
+│ SDD Canonical Phase           │ Specialized Skill Triggers    │ Artifact Target Paths                     │
+├───────────────────────────────┼───────────────────────────────┼───────────────────────────────────────────┤
+│ 1. /sdd-explore, /sdd-propose │ /product-function, /grill     │ docs/product-design/product_function.md   │
+│                               │                               │ openspec/changes/<change>/proposal.md     │
+│ 2. /sdd-spec                  │ /to-spec                      │ openspec/specs/<feature>/spec.md          │
+│ 3. /sdd-design                │ /ia, /ooux, /codebase-design  │ docs/product-design/ia.md, ooux.md        │
+│                               │                               │ openspec/changes/<change>/design.md       │
+│ 4. /sdd-tasks                 │ /to-tickets                   │ openspec/changes/<change>/tasks.md        │
+│ 5. /sdd-apply                 │ /implement, /harness, /team   │ Working source code + unit/integration    │
+│ 6. /sdd-verify                │ /code-review, .gga review     │ Review receipts + pre-commit audit        │
+│ 7. /sdd-archive               │ PR merge + /sdd-archive       │ openspec/changes/archive/<date>-<change>/ │
+└───────────────────────────────┴───────────────────────────────┴───────────────────────────────────────────┘
 ```
+
+---
+
+## ⚡ Slash Commands Quick Reference
+
+| Command | Purpose |
+|---|---|
+| `/harness-creator` | Audit and validate harness reliability across 5 subsystems (100/100 score) |
+| `/sdd-init` | Initialize or reload OpenSpec persistence and `.atl/skill-registry.md` |
+| `/sdd-explore` | Deep codebase investigation and architectural mapping without modifying code |
+| `/product-function` | Scope feature as $y = f(x)$ with 10x Scope-Stripping |
+| `/grill-with-docs` | Stress-test feature scope and technical bounds against documentation |
+| `/to-spec` / `/sdd-spec` | Generate formal acceptance criteria and domain contracts in `openspec/specs/` |
+| `/ia` & `/ooux` | Generate Sitemap, User Flows, Object Cards, and ERD in `docs/product-design/` |
+| `/to-tickets` / `/sdd-tasks` | Decompose design into atomic test-first tickets in `tasks.md` |
+| `/sdd-apply` / `/implement` | Execute tasks autonomously via `/harness` (single) or `/team-cheap` (swarm) |
+| `/sdd-verify` / `/code-review` | Two-axis audit (Spec + Standards compliance) and GGA pre-commit verification |
+| `/sdd-archive` | Archive completed change into `openspec/changes/archive/` and sync living specs |
+| `/plan` | Generate implementation plan artifact with mandatory turn boundary pause |
